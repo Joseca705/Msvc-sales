@@ -30,7 +30,7 @@ public class Sale extends BaseEntity implements Serializable {
   @Column(name = "sale_date", nullable = false)
   private LocalDateTime saleDate;
 
-  @Column(nullable = false)
+  @Column(nullable = false, precision = 38, scale = 4)
   private BigDecimal total;
 
   @Column(nullable = true)

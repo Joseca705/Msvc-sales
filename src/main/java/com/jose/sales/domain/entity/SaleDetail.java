@@ -28,10 +28,10 @@ public class SaleDetail extends BaseEntity implements Serializable {
   @Column(nullable = false)
   private Integer amount;
 
-  @Column(name = "unit_sales_price", nullable = false, precision = 2)
+  @Column(name = "unit_sales_price", nullable = false)
   private BigDecimal unitSalesPrice;
 
-  @Column(name = "subtotal", nullable = false, precision = 2)
+  @Column(name = "subtotal", nullable = false)
   private BigDecimal subtotal;
 
   @ManyToOne

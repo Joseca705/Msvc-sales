@@ -1,5 +1,6 @@
 package com.jose.sales.infraestructure.service;
 
+import com.jose.sales.api.model.request.CreateKardexRequest;
 import com.jose.sales.api.model.request.CreateSaleDto;
 import com.jose.sales.api.model.request.UpdateAmountBatchRequest;
 import com.jose.sales.api.model.response.BatchStockSimpleInfo;
@@ -10,6 +11,7 @@ import com.jose.sales.domain.repository.SaleDetailRepository;
 import com.jose.sales.domain.repository.SaleRepository;
 import com.jose.sales.infraestructure.abstract_service.ISaleService;
 import com.jose.sales.infraestructure.client.BatchStockClient;
+import com.jose.sales.infraestructure.client.KardexClient;
 import com.jose.sales.infraestructure.exception.ProductNotFoundException;
 import com.jose.sales.infraestructure.exception.ProductOverratedException;
 import com.jose.sales.infraestructure.exception.ProductUnderratedException;
@@ -27,7 +29,8 @@ public class SaleService implements ISaleService {
 
   private final SaleRepository saleRepository;
   private final SaleDetailRepository saleDetailRepository;
-  private final BatchStockClient client;
+  private final BatchStockClient batchClient;
+  private final KardexClient kardexClient;
   private final UserIdJwtHelper jwtHelper;
 
   @Override
@@ -40,7 +43,7 @@ public class SaleService implements ISaleService {
       .toList();
     // Making a request to get the batch infos
     List<BatchStockSimpleInfo> batchStocks =
-      this.client.getBatchStockSimpleInfo(ids);
+      this.batchClient.getBatchStockSimpleInfo(ids);
 
     // Validations
     request.forEach(saleDetail -> {
@@ -99,10 +102,38 @@ public class SaleService implements ISaleService {
       .toList();
     saleDetails = this.saleDetailRepository.saveAll(saleDetails);
 
+    // Updating kardex
+    List<CreateKardexRequest> requests = saleDetails
+      .stream()
+      .map(req -> {
+        int balanceAmount =
+          batchStocks
+            .stream()
+            .filter(batch -> batch.getId() == req.getBatchId())
+            .findFirst()
+            .orElseThrow(() -> new ProductNotFoundException())
+            .getCurrentAmount() -
+          req.getAmount();
+
+        return new CreateKardexRequest(
+          "ENTRADA",
+          req.getAmount(),
+          balanceAmount,
+          req.getUnitSalesPrice(),
+          "VENTA",
+          req.getId(),
+          req.getProductId(),
+          req.getBatchId()
+        );
+      })
+      .toList();
+
+    kardexClient.saveSaleIntoKardex(requests);
+
     // Updating the stock and calculating the total
     BigDecimal total = BigDecimal.ZERO;
     saleDetails.forEach(saleDetail -> {
-      client.updateStockAmount(
+      batchClient.updateStockAmount(
         new UpdateAmountBatchRequest(
           saleDetail.getBatchId(),
           saleDetail.getAmount()

@@ -20,7 +20,7 @@ import lombok.NoArgsConstructor;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-@Entity(name = "sale_details")
+@Entity(name = "sales_details")
 public class SaleDetail extends BaseEntity implements Serializable {
 
   @Id

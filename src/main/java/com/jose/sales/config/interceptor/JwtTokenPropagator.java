@@ -17,7 +17,6 @@ public class JwtTokenPropagator implements RequestInterceptor {
     if (authentication != null && authentication.isAuthenticated()) {
       Jwt jwt = (Jwt) authentication.getPrincipal();
       String jwtToken = jwt.getTokenValue();
-      System.out.println(jwtToken);
       template.header("Authorization", "Bearer " + jwtToken);
     }
   }

@@ -1,6 +1,5 @@
 package com.jose.sales.domain.repository;
 
-import com.jose.sales.api.model.projection.TopSellingProductsProjection;
 import com.jose.sales.domain.entity.SaleDetail;
 import java.util.List;
 import org.springframework.data.jpa.repository.JpaRepository;

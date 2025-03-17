@@ -6,7 +6,6 @@ import jakarta.persistence.EntityListeners;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.MappedSuperclass;
-import jakarta.persistence.PrePersist;
 import jakarta.persistence.Temporal;
 import jakarta.persistence.TemporalType;
 import java.time.LocalDateTime;
@@ -43,9 +42,4 @@ public abstract class BaseEntity {
   @Enumerated(EnumType.STRING)
   @Column(nullable = false)
   private Status status;
-
-  @PrePersist
-  public void onPrePersist() {
-    this.status = Status.ACTIVE;
-  }
 }

@@ -1,5 +1,6 @@
 package com.jose.sales.domain.entity;
 
+import com.jose.sales.domain.constant.Status;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -7,6 +8,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.PrePersist;
 import java.io.Serializable;
 import java.math.BigDecimal;
 import lombok.AllArgsConstructor;
@@ -48,4 +50,24 @@ public class SaleDetail extends BaseEntity implements Serializable {
 
   @Column(name = "batch_id", nullable = false)
   private Integer batchId;
+
+  public SaleDetail(
+    Integer amount,
+    BigDecimal unitSalesPrice,
+    Sale sale,
+    Integer productId,
+    Integer batchId
+  ) {
+    this.amount = amount;
+    this.unitSalesPrice = unitSalesPrice;
+    this.sale = sale;
+    this.productId = productId;
+    this.batchId = batchId;
+  }
+
+  @PrePersist
+  public void onPrePersist() {
+    this.setStatus(Status.ACTIVE);
+    this.subtotal = unitSalesPrice.multiply(new BigDecimal(this.amount));
+  }
 }

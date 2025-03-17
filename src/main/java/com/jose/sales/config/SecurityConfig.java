@@ -19,7 +19,10 @@ public class SecurityConfig {
     "/.well-known/**, ",
     "/v3/api-docs/**",
   };
-  private static final String[] USER_RESOURCES = { "/sale-detail/**" };
+  private static final String[] USER_RESOURCES = {
+    "/sale-detail/**",
+    "/sale/**",
+  };
   private static final String[] ADMIN_RESOURCES = { "/user/**", "/report/**" };
   private static final String ROLE_ADMIN = "ADMIN";
   private static final String ROLE_USER = "USER";

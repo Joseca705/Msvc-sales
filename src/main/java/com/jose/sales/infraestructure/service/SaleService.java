@@ -2,14 +2,13 @@ package com.jose.sales.infraestructure.service;
 
 import com.jose.sales.api.model.request.CreateKardexRequest;
 import com.jose.sales.api.model.request.CreateSaleDto;
-import com.jose.sales.api.model.response.BatchStockSimpleInfo;
 import com.jose.sales.api.model.response.CreatedSaleResponse;
+import com.jose.sales.api.model.response.KardexSimpleInfo;
 import com.jose.sales.domain.entity.Sale;
 import com.jose.sales.domain.entity.SaleDetail;
 import com.jose.sales.domain.repository.SaleDetailRepository;
 import com.jose.sales.domain.repository.SaleRepository;
 import com.jose.sales.infraestructure.abstract_service.ISaleService;
-import com.jose.sales.infraestructure.client.BatchStockClient;
 import com.jose.sales.infraestructure.client.KardexClient;
 import com.jose.sales.infraestructure.exception.ProductNotFoundException;
 import com.jose.sales.infraestructure.exception.ProductOverratedException;
@@ -28,7 +27,6 @@ public class SaleService implements ISaleService {
 
   private final SaleRepository saleRepository;
   private final SaleDetailRepository saleDetailRepository;
-  private final BatchStockClient batchClient;
   private final KardexClient kardexClient;
   private final UserIdJwtHelper jwtHelper;
 
@@ -41,17 +39,17 @@ public class SaleService implements ISaleService {
       .map(CreateSaleDto::getBatchId)
       .toList();
     // Making a request to get the batch infos
-    List<BatchStockSimpleInfo> batchStocks =
-      this.batchClient.getBatchStockSimpleInfo(ids);
+    List<KardexSimpleInfo> batchStocks =
+      this.kardexClient.getKardexSimpleInfo(ids);
 
     // Validations
     request.forEach(saleDetail -> {
       // Validate if they are correct
-      BatchStockSimpleInfo batchStock = batchStocks
+      KardexSimpleInfo batchStock = batchStocks
         .stream()
         .filter(
           batch ->
-            batch.getId() == saleDetail.getBatchId() &&
+            batch.getBatchId() == saleDetail.getBatchId() &&
             batch.getProductId() == saleDetail.getProductId()
         )
         .findFirst()
@@ -59,14 +57,14 @@ public class SaleService implements ISaleService {
 
       // Validate the 75%
       BigDecimal overrated = batchStock
-        .getPurchasePrice()
+        .getUnitPrice()
         .multiply(new BigDecimal(1.75));
       if (
         saleDetail.getUnitSalePrice().compareTo(overrated) == 1
       ) throw new ProductOverratedException(saleDetail.getProductId());
 
       BigDecimal underrated = batchStock
-        .getPurchasePrice()
+        .getUnitPrice()
         .multiply(new BigDecimal(0.25));
       if (
         saleDetail.getUnitSalePrice().compareTo(underrated) == -1
@@ -108,10 +106,10 @@ public class SaleService implements ISaleService {
         int balanceAmount =
           batchStocks
             .stream()
-            .filter(batch -> batch.getId() == req.getBatchId())
+            .filter(batch -> batch.getBatchId() == req.getBatchId())
             .findFirst()
             .orElseThrow(() -> new ProductNotFoundException())
-            .getInitialAmount() -
+            .getBalanceAmount() -
           req.getAmount();
 
         return new CreateKardexRequest(

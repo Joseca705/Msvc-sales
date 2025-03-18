@@ -101,7 +101,6 @@ public class SaleService implements ISaleService {
       .toList();
     saleDetails = this.saleDetailRepository.saveAll(saleDetails);
 
-    BigDecimal total = BigDecimal.ZERO;
     // Updating kardex
     List<CreateKardexRequest> requests = saleDetails
       .stream()
@@ -114,7 +113,6 @@ public class SaleService implements ISaleService {
             .orElseThrow(() -> new ProductNotFoundException())
             .getInitialAmount() -
           req.getAmount();
-        total.add(req.getSubtotal());
 
         return new CreateKardexRequest(
           "ENTRADA",
@@ -130,6 +128,11 @@ public class SaleService implements ISaleService {
       .toList();
 
     this.kardexClient.saveSaleIntoKardex(requests);
+
+    BigDecimal total = BigDecimal.ZERO;
+    for (SaleDetail req : saleDetails) {
+      total = total.add(req.getSubtotal());
+    }
 
     //Updating the sale
     sale.setTotal(total);

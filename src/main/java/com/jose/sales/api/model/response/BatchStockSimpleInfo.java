@@ -14,8 +14,6 @@ public class BatchStockSimpleInfo {
 
   private Integer initialAmount;
 
-  private Integer currentAmount;
-
   private BigDecimal purchasePrice;
 
   private Integer productId;

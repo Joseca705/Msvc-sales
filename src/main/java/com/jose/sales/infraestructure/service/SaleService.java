@@ -2,7 +2,6 @@ package com.jose.sales.infraestructure.service;
 
 import com.jose.sales.api.model.request.CreateKardexRequest;
 import com.jose.sales.api.model.request.CreateSaleDto;
-import com.jose.sales.api.model.request.UpdateAmountBatchRequest;
 import com.jose.sales.api.model.response.BatchStockSimpleInfo;
 import com.jose.sales.api.model.response.CreatedSaleResponse;
 import com.jose.sales.domain.entity.Sale;
@@ -36,7 +35,7 @@ public class SaleService implements ISaleService {
   @Override
   @Transactional
   public CreatedSaleResponse create(List<CreateSaleDto> request) {
-    // Gettig only yhe batch ids
+    // Gettig only the batch ids
     List<Integer> ids = request
       .stream()
       .map(CreateSaleDto::getBatchId)
@@ -102,6 +101,7 @@ public class SaleService implements ISaleService {
       .toList();
     saleDetails = this.saleDetailRepository.saveAll(saleDetails);
 
+    BigDecimal total = BigDecimal.ZERO;
     // Updating kardex
     List<CreateKardexRequest> requests = saleDetails
       .stream()
@@ -112,8 +112,9 @@ public class SaleService implements ISaleService {
             .filter(batch -> batch.getId() == req.getBatchId())
             .findFirst()
             .orElseThrow(() -> new ProductNotFoundException())
-            .getCurrentAmount() -
+            .getInitialAmount() -
           req.getAmount();
+        total.add(req.getSubtotal());
 
         return new CreateKardexRequest(
           "ENTRADA",
@@ -128,19 +129,7 @@ public class SaleService implements ISaleService {
       })
       .toList();
 
-    kardexClient.saveSaleIntoKardex(requests);
-
-    // Updating the stock and calculating the total
-    BigDecimal total = BigDecimal.ZERO;
-    saleDetails.forEach(saleDetail -> {
-      batchClient.updateStockAmount(
-        new UpdateAmountBatchRequest(
-          saleDetail.getBatchId(),
-          saleDetail.getAmount()
-        )
-      );
-      total.add(saleDetail.getSubtotal());
-    });
+    this.kardexClient.saveSaleIntoKardex(requests);
 
     //Updating the sale
     sale.setTotal(total);

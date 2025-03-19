@@ -1,0 +1,502 @@
+{
+	"info": {
+		"_postman_id": "142249b5-7716-4867-9120-70e0044600f3",
+		"name": "Pruebas de integración de los microservicio",
+		"description": "# 🚀 Microservicio Oauth2\n\nEste microservicio es el encargado de gestionar las autorizaciones a los microservicios, además genera los tokens de acceso a cada uno de ellos.\n\n# 🚀 Microservicio Tienda\n\nEste microservicio es el encargado de registrar nuevos productos, registrar a nuevos proveedores y registrar nuevos lotes adquiridos y almacenarlos en el stock.\n\n# 🚀 Microservicio Ventas\n\nEste microservicio es el encargado de realizar las ventas de los productos disponibles en el stock.\n\n# 🚀 Microservicio Kardex\n\nEste microservicio es el encargado de registrar las transacciones que se hacen sobre los lotes, ya sea ENTRADA o SALIDA de productos con sus respectivos precios.  \nAdemás, de este microservicio podemos obtener los productos que más vendidos, los productos que están por debajo del umbral permitido, ya que con esa información podemos saber qué lotes están próximos a acabarse, incluso podemos saber las ganancias que generamos.\n\n## Pasos para obtener el token y continuar con las pruebas\n\n### Paso 1\n\nLevantar todos los microservicios\n\n### Paso 2\n\nIngresar a la siguiente página [https://oauthdebugger.com/](https://oauthdebugger.com/)\n\n### Paso 3\n\nLlenar su formulario con los siguientes datos:  \nAuthorize URI -> [http://localhost:9000/oauth2/authorize](http://localhost:9000/oauth2/authorize)  \nClient ID -> client  \nScope -> write\n\n<img src=\"https://content.pstmn.io/cc3cdcba-b172-4074-bcf5-0827886fbff2/U2NyZWVuc2hvdCAyMDI1LTAzLTE4IDE4MjgyNi5wbmc=\">\n\n### Paso 4\n\nOprimir en el boton SEND REQUEST\n\n### Paso 5\n\nIngresar en el formulario de login las siguiente credenciales:  \nUsername -> josecalancha  \nPassword -> 123\n\n<img src=\"https://content.pstmn.io/8978b6f3-de39-40a0-b7b8-037636602fa3/U2NyZWVuc2hvdCAyMDI1LTAzLTE4IDE4MzM0MS5wbmc=\">\n\n### Paso 6\n\nCopiar el código generado\n\n<img src=\"https://content.pstmn.io/3f4e2a9d-4731-49ee-956c-a7e2fe6bb107/U2NyZWVuc2hvdCAyMDI1LTAzLTE4IDE4MzE0OS5wbmc=\">\n\n### Paso 7\n\nPegar el código en las variables globales\n\n<img src=\"https://content.pstmn.io/b3a3e1a8-aa45-4081-938b-e12acb219d98/U2NyZWVuc2hvdCAyMDI1LTAzLTE4IDE4MjYxMS5wbmc=\">\n\n### Paso 8\n\nEjecutar la petición: POST Obtener JWT\n\nAhora es posible ejecutar las demás requests.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "22811755"
+	},
+	"item": [
+		{
+			"name": "Obtener JWT",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"var response = pm.response.json();",
+							"",
+							"pm.globals.set(\"jwt\", response.access_token);"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				},
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "secret",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "client",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "urlencoded",
+					"urlencoded": [
+						{
+							"key": "redirect_uri",
+							"value": "https://oauthdebugger.com/debug",
+							"type": "text"
+						},
+						{
+							"key": "grant_type",
+							"value": "authorization_code",
+							"type": "text"
+						},
+						{
+							"key": "code",
+							"value": "{{auth_code}}",
+							"type": "text"
+						}
+					]
+				},
+				"url": {
+					"raw": "{{url_oauth}}/oauth2/token",
+					"host": [
+						"{{url_oauth}}"
+					],
+					"path": [
+						"oauth2",
+						"token"
+					]
+				},
+				"description": "Esta petición se encarga de obtener el token y poner como variable de entorno el token recibido, donde las credenciales son:\n\n- Username: client\n    \n- Password: secret\n    \n\nY se debe cambiar el code generado en los pasos anteriores"
+			},
+			"response": []
+		},
+		{
+			"name": "1. Tienda - Registrar un nuevo producto",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{jwt}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"name\": \"QUESO ARCOR\",\n    \"salePrice\": 18.20,\n    \"umbralStock\": 200\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{url_store}}/product",
+					"host": [
+						"{{url_store}}"
+					],
+					"path": [
+						"product"
+					]
+				},
+				"description": "Esta petición se necarga de registrar nuevos productos."
+			},
+			"response": []
+		},
+		{
+			"name": "1.1 Buscar producto por código",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{jwt}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{url_store}}/product/code?code=3d475d448777edadce31ccb76fc376bca39abbdf177394deea19ebe8f83692d6",
+					"host": [
+						"{{url_store}}"
+					],
+					"path": [
+						"product",
+						"code"
+					],
+					"query": [
+						{
+							"key": "code",
+							"value": "3d475d448777edadce31ccb76fc376bca39abbdf177394deea19ebe8f83692d6"
+						}
+					]
+				},
+				"description": "Esta petición trae la información de un producto."
+			},
+			"response": []
+		},
+		{
+			"name": "1.2 Listado de productos",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{jwt}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{url_store}}/product?page=0&size=5&name=PIL",
+					"host": [
+						"{{url_store}}"
+					],
+					"path": [
+						"product"
+					],
+					"query": [
+						{
+							"key": "page",
+							"value": "0"
+						},
+						{
+							"key": "size",
+							"value": "5"
+						},
+						{
+							"key": "name",
+							"value": "PIL"
+						}
+					]
+				},
+				"description": "Esta petición trae un listado paginado de todos los productos y con el param name se puede hacer un filtro."
+			},
+			"response": []
+		},
+		{
+			"name": "1.3 Listado de proveedores",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{jwt}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{url_store}}/provider?page=1&size=5",
+					"host": [
+						"{{url_store}}"
+					],
+					"path": [
+						"provider"
+					],
+					"query": [
+						{
+							"key": "page",
+							"value": "1"
+						},
+						{
+							"key": "size",
+							"value": "5"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "2. Tienda - Guardar lote",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{jwt}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"productId\": 19,\n    \"providerId\": 9,\n    \"expirationDate\": \"2027-12-10\",\n    \"amount\": 321,\n    \"purchasePrice\": 2.50\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{url_store}}/batch",
+					"host": [
+						"{{url_store}}"
+					],
+					"path": [
+						"batch"
+					]
+				},
+				"description": "Esta petición se encarga de agregar nuevos lotes al stock."
+			},
+			"response": []
+		},
+		{
+			"name": "3. Ventas - Realizar venta",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{jwt}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "[\n    {\n        \"productId\": 19,\n        \"batchId\": 23,\n        \"amount\": 3,\n        \"unitSalePrice\": 3.50\n    }\n]",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{url_sales}}/sale",
+					"host": [
+						"{{url_sales}}"
+					],
+					"path": [
+						"sale"
+					]
+				},
+				"description": "Esta petición recibe los productos, la cantidad y el precio unitario de venta, los cuales son usados para realizar una venta, recibe un array de productos."
+			},
+			"response": []
+		},
+		{
+			"name": "4. Kardex - Obtener los productos mas vendidos",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{jwt}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{url_kardex}}/kardex/top-selling-products?limit=2",
+					"host": [
+						"{{url_kardex}}"
+					],
+					"path": [
+						"kardex",
+						"top-selling-products"
+					],
+					"query": [
+						{
+							"key": "limit",
+							"value": "2"
+						}
+					]
+				},
+				"description": "Con esta petición obtenemos del kardex los productos mas vendidos, y le pasamos como parametro la cantidad que queremos."
+			},
+			"response": []
+		},
+		{
+			"name": "5. Kardex - Obtener los productos que esten por debajo del umbral",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{jwt}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{url_kardex}}/kardex/less-than-umbral",
+					"host": [
+						"{{url_kardex}}"
+					],
+					"path": [
+						"kardex",
+						"less-than-umbral"
+					]
+				},
+				"description": "Esta petición se encarga de obtener un listado de productos que se encuentran por debajo del umbral permitido."
+			},
+			"response": []
+		},
+		{
+			"name": "5.1 Actualizar el Precio o Umbral de un producto",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{jwt}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "PATCH",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"name\": \"Carne de pollo\",\n    \"salePrice\": 40.50,\n    \"umbralStock\": 159\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{url_store}}/product/1",
+					"host": [
+						"{{url_store}}"
+					],
+					"path": [
+						"product",
+						"1"
+					]
+				},
+				"description": "Esta petición es usada para actualizar el nombre, el precio de venta o el umbral."
+			},
+			"response": []
+		},
+		{
+			"name": "6. Kardex - Obtener ganancias",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{jwt}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{url_kardex}}/kardex/profit?start=2025-02-10&end=2025-03-18",
+					"host": [
+						"{{url_kardex}}"
+					],
+					"path": [
+						"kardex",
+						"profit"
+					],
+					"query": [
+						{
+							"key": "start",
+							"value": "2025-02-10"
+						},
+						{
+							"key": "end",
+							"value": "2025-03-18"
+						}
+					]
+				},
+				"description": "Con esta petición podemos obtener las ganancias que tenemos en un rango de fechas."
+			},
+			"response": []
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "auth_code",
+			"value": "m9W-hFwV7y8Go6_JdhRNiyHo9y6PKapIY4aMo1Kr90iB3sL65csSPq_adAj28-2tKdiLLmH_xuck373JAbJYMExEZjH6JhZgdYKrWWYr1Gtk7KYXbWl_cOO-qZYzViAC-JTmLlBdMZalORHTSTPe9Ett9kszgr0gLAckIgguq06oxeb_N9UlkWoc7Wcol9pyYCX28DVDvZn5VcosUk0e",
+			"type": "string"
+		},
+		{
+			"key": "url_oauth",
+			"value": "http://localhost:9000",
+			"type": "string"
+		},
+		{
+			"key": "url_store",
+			"value": "http://localhost:8050",
+			"type": "string"
+		},
+		{
+			"key": "url_sales",
+			"value": "http://localhost:8060",
+			"type": "string"
+		},
+		{
+			"key": "url_kardex",
+			"value": "http://localhost:8070",
+			"type": "string"
+		}
+	]
+}

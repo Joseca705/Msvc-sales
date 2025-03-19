@@ -3,13 +3,15 @@ package com.jose.sales.infraestructure.service;
 import com.jose.sales.api.model.request.CreateKardexRequest;
 import com.jose.sales.api.model.request.CreateSaleDto;
 import com.jose.sales.api.model.response.CreatedSaleResponse;
-import com.jose.sales.api.model.response.KardexSimpleInfo;
+import com.jose.sales.api.model.response.CurrentAmountBatchKardex;
+import com.jose.sales.api.model.response.PurchasePriceBatchStore;
 import com.jose.sales.domain.entity.Sale;
 import com.jose.sales.domain.entity.SaleDetail;
 import com.jose.sales.domain.repository.SaleDetailRepository;
 import com.jose.sales.domain.repository.SaleRepository;
 import com.jose.sales.infraestructure.abstract_service.ISaleService;
 import com.jose.sales.infraestructure.client.KardexClient;
+import com.jose.sales.infraestructure.client.StoreClient;
 import com.jose.sales.infraestructure.exception.ProductNotFoundException;
 import com.jose.sales.infraestructure.exception.ProductOverratedException;
 import com.jose.sales.infraestructure.exception.ProductUnderratedException;
@@ -17,6 +19,8 @@ import com.jose.sales.infraestructure.helper.UserIdJwtHelper;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -28,43 +32,54 @@ public class SaleService implements ISaleService {
   private final SaleRepository saleRepository;
   private final SaleDetailRepository saleDetailRepository;
   private final KardexClient kardexClient;
+  private final StoreClient storeClient;
   private final UserIdJwtHelper jwtHelper;
 
   @Override
   @Transactional
   public CreatedSaleResponse create(List<CreateSaleDto> request) {
     // Gettig only the batch ids
-    List<Integer> ids = request
+    List<Integer> batchIds = request
       .stream()
       .map(CreateSaleDto::getBatchId)
       .toList();
-    // Making a request to get the batch infos
-    List<KardexSimpleInfo> batchStocks =
-      this.kardexClient.getKardexSimpleInfo(ids);
+
+    // Making a request to get the current amount of products
+    List<CurrentAmountBatchKardex> listOfAmounts =
+      this.kardexClient.getCurrentAmountBatchKardex(batchIds);
+    Map<Integer, Integer> amounts = listOfAmounts
+      .stream()
+      .collect(
+        Collectors.toMap(
+          CurrentAmountBatchKardex::getBatchId,
+          CurrentAmountBatchKardex::getBalanceAmount
+        )
+      );
+
+    // Making a request to get the purchse price of batchs
+    List<PurchasePriceBatchStore> listsOfPrices =
+      this.storeClient.getPurchasePriceBatchStore(batchIds);
+    Map<Integer, BigDecimal> prices = listsOfPrices
+      .stream()
+      .collect(
+        Collectors.toMap(
+          PurchasePriceBatchStore::getId,
+          PurchasePriceBatchStore::getPurchasePrice
+        )
+      );
 
     // Validations
     request.forEach(saleDetail -> {
-      // Validate if they are correct
-      KardexSimpleInfo batchStock = batchStocks
-        .stream()
-        .filter(
-          batch ->
-            batch.getBatchId() == saleDetail.getBatchId() &&
-            batch.getProductId() == saleDetail.getProductId()
-        )
-        .findFirst()
-        .orElseThrow(() -> new ProductNotFoundException());
-
       // Validate the 75%
-      BigDecimal overrated = batchStock
-        .getUnitPrice()
+      BigDecimal overrated = prices
+        .get(saleDetail.getBatchId())
         .multiply(new BigDecimal(1.75));
       if (
         saleDetail.getUnitSalePrice().compareTo(overrated) == 1
       ) throw new ProductOverratedException(saleDetail.getProductId());
 
-      BigDecimal underrated = batchStock
-        .getUnitPrice()
+      BigDecimal underrated = prices
+        .get(saleDetail.getBatchId())
         .multiply(new BigDecimal(0.25));
       if (
         saleDetail.getUnitSalePrice().compareTo(underrated) == -1
@@ -103,14 +118,7 @@ public class SaleService implements ISaleService {
     List<CreateKardexRequest> requests = saleDetails
       .stream()
       .map(req -> {
-        int balanceAmount =
-          batchStocks
-            .stream()
-            .filter(batch -> batch.getBatchId() == req.getBatchId())
-            .findFirst()
-            .orElseThrow(() -> new ProductNotFoundException())
-            .getBalanceAmount() -
-          req.getAmount();
+        int balanceAmount = amounts.get(req.getBatchId()) - req.getAmount();
 
         return new CreateKardexRequest(
           "ENTRADA",
@@ -139,7 +147,7 @@ public class SaleService implements ISaleService {
 
     this.saleRepository.save(sale);
 
-    return new CreatedSaleResponse("Sale made it succesfully.");
+    return new CreatedSaleResponse("Venta realizada exitosamente.");
   }
 
   @Override

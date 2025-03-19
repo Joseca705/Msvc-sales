@@ -2,7 +2,7 @@ package com.jose.sales.infraestructure.client;
 
 import com.jose.sales.api.model.request.CreateKardexRequest;
 import com.jose.sales.api.model.response.CreatedKardexResponse;
-import com.jose.sales.api.model.response.KardexSimpleInfo;
+import com.jose.sales.api.model.response.CurrentAmountBatchKardex;
 import java.util.List;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -17,6 +17,8 @@ public interface KardexClient {
     @RequestBody List<CreateKardexRequest> request
   );
 
-  @GetMapping(path = "/kardex/simple-info")
-  List<KardexSimpleInfo> getKardexSimpleInfo(@RequestParam List<Integer> ids);
+  @GetMapping(path = "/kardex/current-amount-batch")
+  List<CurrentAmountBatchKardex> getCurrentAmountBatchKardex(
+    @RequestParam List<Integer> ids
+  );
 }

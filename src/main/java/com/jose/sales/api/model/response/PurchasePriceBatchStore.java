@@ -8,13 +8,9 @@ import lombok.NoArgsConstructor;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class KardexSimpleInfo {
+public class PurchasePriceBatchStore {
 
-  private Integer batchId;
+  private Integer id;
 
-  private Integer balanceAmount;
-
-  private BigDecimal unitPrice;
-
-  private Integer productId;
+  private BigDecimal purchasePrice;
 }

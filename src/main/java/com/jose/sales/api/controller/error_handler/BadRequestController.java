@@ -1,5 +1,6 @@
 package com.jose.sales.api.controller.error_handler;
 
+import com.fasterxml.jackson.databind.exc.UnrecognizedPropertyException;
 import com.jose.sales.api.model.response.ErrorResponse;
 import com.jose.sales.api.model.response.ErrorsResponse;
 import com.jose.sales.api.model.response.abstract_response.BaseErrorResponse;
@@ -72,6 +73,17 @@ public class BadRequestController {
   ) {
     return ErrorResponse.builder()
       .error(exception.getMessage())
+      .status(HttpStatus.BAD_REQUEST.name())
+      .code(HttpStatus.BAD_REQUEST.value())
+      .build();
+  }
+
+  @ExceptionHandler(exception = UnrecognizedPropertyException.class)
+  public ErrorResponse handleUnrecognizedPropertyException(
+    UnrecognizedPropertyException exception
+  ) {
+    return ErrorResponse.builder()
+      .error("El modelo de datos enviado no es igual al modelo requerido.")
       .status(HttpStatus.BAD_REQUEST.name())
       .code(HttpStatus.BAD_REQUEST.value())
       .build();

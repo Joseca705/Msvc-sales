@@ -2,6 +2,7 @@ package com.jose.sales.infraestructure.service;
 
 import com.jose.sales.api.model.request.CreateKardexRequest;
 import com.jose.sales.api.model.request.CreateSaleDto;
+import com.jose.sales.api.model.request.IdBatchProductRequest;
 import com.jose.sales.api.model.response.CreatedSaleResponse;
 import com.jose.sales.api.model.response.CurrentAmountBatchKardex;
 import com.jose.sales.api.model.response.PurchasePriceBatchStore;
@@ -38,6 +39,32 @@ public class SaleService implements ISaleService {
   @Override
   @Transactional
   public CreatedSaleResponse create(List<CreateSaleDto> request) {
+    List<IdBatchProductRequest> batchProductIds = request
+      .stream()
+      .map(req -> {
+        return IdBatchProductRequest.builder()
+          .batchId(req.getBatchId())
+          .productId(req.getProductId())
+          .build();
+      })
+      .toList();
+
+    // Making a request to get the purchase price of batchs
+    List<PurchasePriceBatchStore> listsOfPrices =
+      this.storeClient.getPurchasePriceBatchStore(batchProductIds);
+
+    if (
+      listsOfPrices.size() != request.size()
+    ) throw new ProductNotFoundException();
+    Map<Integer, BigDecimal> prices = listsOfPrices
+      .stream()
+      .collect(
+        Collectors.toMap(
+          PurchasePriceBatchStore::getId,
+          PurchasePriceBatchStore::getPurchasePrice
+        )
+      );
+
     // Gettig only the batch ids
     List<Integer> batchIds = request
       .stream()
@@ -53,18 +80,6 @@ public class SaleService implements ISaleService {
         Collectors.toMap(
           CurrentAmountBatchKardex::getBatchId,
           CurrentAmountBatchKardex::getBalanceAmount
-        )
-      );
-
-    // Making a request to get the purchse price of batchs
-    List<PurchasePriceBatchStore> listsOfPrices =
-      this.storeClient.getPurchasePriceBatchStore(batchIds);
-    Map<Integer, BigDecimal> prices = listsOfPrices
-      .stream()
-      .collect(
-        Collectors.toMap(
-          PurchasePriceBatchStore::getId,
-          PurchasePriceBatchStore::getPurchasePrice
         )
       );
 

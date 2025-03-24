@@ -8,6 +8,7 @@ import com.jose.sales.infraestructure.exception.ExistingRecordException;
 import com.jose.sales.infraestructure.exception.ProductNotFoundException;
 import com.jose.sales.infraestructure.exception.ProductOverratedException;
 import com.jose.sales.infraestructure.exception.ProductUnderratedException;
+import jakarta.validation.ConstraintViolationException;
 import java.util.ArrayList;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -84,6 +85,17 @@ public class BadRequestController {
   ) {
     return ErrorResponse.builder()
       .error("El modelo de datos enviado no es igual al modelo requerido.")
+      .status(HttpStatus.BAD_REQUEST.name())
+      .code(HttpStatus.BAD_REQUEST.value())
+      .build();
+  }
+
+  @ExceptionHandler(exception = ConstraintViolationException.class)
+  public ErrorResponse handleConstraintViolationException(
+    ConstraintViolationException exception
+  ) {
+    return ErrorResponse.builder()
+      .error(exception.getMessage())
       .status(HttpStatus.BAD_REQUEST.name())
       .code(HttpStatus.BAD_REQUEST.value())
       .build();

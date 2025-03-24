@@ -58,45 +58,53 @@ public class SaleServiceTest {
   void crearVenta_Exitoso() {
     // Creamos objetos de prueba
     CreateSaleDto saleDto = new CreateSaleDto(
-        1,
-        1,
-        2,
-        BigDecimal.valueOf(150.00));
+      1,
+      1,
+      2,
+      BigDecimal.valueOf(150.00)
+    );
     List<CreateSaleDto> request = List.of(saleDto);
 
     PurchasePriceBatchStore priceInfo = new PurchasePriceBatchStore(
-        1,
-        BigDecimal.valueOf(100));
+      1,
+      BigDecimal.valueOf(100)
+    );
     when(storeClient.getPurchasePriceBatchStore(anyList())).thenReturn(
-        List.of(priceInfo));
+      List.of(priceInfo)
+    );
 
     CurrentAmountBatchKardex stockInfo = new CurrentAmountBatchKardex(1, 10);
     when(kardexClient.getCurrentAmountBatchKardex(anyList())).thenReturn(
-        List.of(stockInfo));
+      List.of(stockInfo)
+    );
 
     // Creamos un usuario de auditoria de test
     when(jwtHelper.getCurrentUserId()).thenReturn("42");
 
     Sale savedSale = new Sale(
-        LocalDateTime.now(),
-        BigDecimal.ZERO,
-        "PRE-SALE",
-        42);
+      LocalDateTime.now(),
+      BigDecimal.ZERO,
+      "PRE-SALE",
+      42
+    );
     savedSale.setId(1);
     when(saleRepository.save(any(Sale.class))).thenReturn(savedSale);
 
     SaleDetail saleDetail = new SaleDetail(
-        2,
-        BigDecimal.valueOf(150),
-        savedSale,
-        1,
-        1);
+      2,
+      BigDecimal.valueOf(150),
+      savedSale,
+      1,
+      1
+    );
     saleDetail.setSubtotal(
-        saleDetail
-            .getUnitSalesPrice()
-            .multiply(BigDecimal.valueOf(saleDetail.getAmount())));
+      saleDetail
+        .getUnitSalesPrice()
+        .multiply(BigDecimal.valueOf(saleDetail.getAmount()))
+    );
     when(saleDetailRepository.saveAll(anyList())).thenReturn(
-        List.of(saleDetail));
+      List.of(saleDetail)
+    );
 
     // Comenzamos la prueba
     CreatedSaleResponse response = saleService.create(request);
@@ -106,23 +114,31 @@ public class SaleServiceTest {
     assertEquals("Venta realizada exitosamente.", response.getMessage());
   }
 
-  @DisplayName("Este metodo se encarga de lanzar una excepcion cuando un producto no exista o no se encuentre su stock.")
+  @DisplayName(
+    "Este metodo se encarga de lanzar una excepcion cuando un producto no exista o no se encuentre su stock."
+  )
   @Test
   void crearVenta_ThrowsProductNotFoundException() {
     // Creamos los objetos de prueba
     CreateSaleDto saleDto = new CreateSaleDto(
-        1,
-        1,
-        2,
-        BigDecimal.valueOf(150.00));
+      1,
+      1,
+      2,
+      BigDecimal.valueOf(150.00)
+    );
     when(storeClient.getPurchasePriceBatchStore(anyList())).thenReturn(
-        List.of());
+      List.of()
+    );
 
     // Act & Assert
-    assertThrows(ProductNotFoundException.class, () -> saleService.create(List.of(saleDto)));
+    assertThrows(ProductNotFoundException.class, () ->
+      saleService.create(List.of(saleDto))
+    );
   }
 
-  @DisplayName("Este metodo lanza una excepcion cuando el precio de venta sea mayor al 75% del precio de compra.")
+  @DisplayName(
+    "Este metodo lanza una excepcion cuando el precio de venta sea mayor al 75% del precio de compra."
+  )
   @Test
   void crearVenta_ThrowsProductOverratedException() {
     // Creamos objetos de prueba con el precio mas caro que el 75%
@@ -131,20 +147,27 @@ public class SaleServiceTest {
 
     // Creamos el objeto con el precio original
     PurchasePriceBatchStore priceInfo = new PurchasePriceBatchStore(
-        1,
-        BigDecimal.valueOf(100));
+      1,
+      BigDecimal.valueOf(100)
+    );
 
     when(storeClient.getPurchasePriceBatchStore(anyList())).thenReturn(
-        List.of(priceInfo));
+      List.of(priceInfo)
+    );
 
     when(kardexClient.getCurrentAmountBatchKardex(anyList())).thenReturn(
-        List.of(new CurrentAmountBatchKardex(1, 10)));
+      List.of(new CurrentAmountBatchKardex(1, 10))
+    );
 
     // Assert
-    assertThrows(ProductOverratedException.class, () -> saleService.create(request));
+    assertThrows(ProductOverratedException.class, () ->
+      saleService.create(request)
+    );
   }
 
-  @DisplayName("Este metodo lanza una excepcion cuando el precio de venta sea menor al 75% del precio de compra.")
+  @DisplayName(
+    "Este metodo lanza una excepcion cuando el precio de venta sea menor al 75% del precio de compra."
+  )
   @Test
   void crearVenta_ThrowsProductUnderratedException() {
     // Creamos objetos de prueba con el precio menos caro que el 75%
@@ -153,15 +176,20 @@ public class SaleServiceTest {
 
     // Creamos el objeto con el precio original
     PurchasePriceBatchStore priceInfo = new PurchasePriceBatchStore(
-        1,
-        BigDecimal.valueOf(100));
+      1,
+      BigDecimal.valueOf(100)
+    );
     when(storeClient.getPurchasePriceBatchStore(anyList())).thenReturn(
-        List.of(priceInfo));
+      List.of(priceInfo)
+    );
 
     when(kardexClient.getCurrentAmountBatchKardex(anyList())).thenReturn(
-        List.of(new CurrentAmountBatchKardex(1, 10)));
+      List.of(new CurrentAmountBatchKardex(1, 10))
+    );
 
     // Assert
-    assertThrows(ProductUnderratedException.class, () -> saleService.create(request));
+    assertThrows(ProductUnderratedException.class, () ->
+      saleService.create(request)
+    );
   }
 }

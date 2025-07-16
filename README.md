@@ -1,53 +1,40 @@
-# Proyecto Tienda de barrio
+# Neighborhood Store Project
 
-Este proyecto está diseñado para controlar el flujo de productos dentro la tienda, con este sistema es posible realizar la compra de productos y almacenarlos en un stock, realizar la venta de los productos disponibles en el stock, buscar productos por su código, incluso tener un kardex del que es posible consultar los productos más vendidos, productos que están por debajo de un umbral preestablecido y buscar la ganancia que se tuvo en un rango de fechas.
+This project is designed to manage the flow of products within the store. With this system, it is possible to purchase products and store them in stock, sell the products available in the stock, search for products by their code, and even have a kardex where you can check the most sold products, products that are below a predefined threshold, and view the profit made over a date range.
 
-## Instalación
-
-Para poder instalar y usar este sistema es necesario contar con Docker y Docker compose instalado, con el siguiente comando se comienza con el levantamiento del sistema:
-
+## Installation
+To install and use this system, Docker and Docker Compose must be installed. Use the following command to start the system:
 ```batch=
 $ docker-compose up
 ```
+The creation of the database and its seeders is done automatically by the microservice named: `msvc-users`, which includes the dependency Flyway for performing migrations.
 
-La creación de la base de datos y sus seeders se lo hace de manera automática con el microservicio llamado: msvc-users, el cual cuenta con la dependencia para realizar migraciones: Flyway.
+## Flows
+To understand the flow, requests intended to be used with Postman are highlighted in bold.
 
-## Flujos
+### Flow for product creation
+This flow starts by sending only the necessary data for its creation **(1. Store - Register a new product)**.
 
-Para entender el flujo, se resaltan en negrita a las peticiones a ser usadas con Postman.
+### Flow for adding new batches
+This flow starts by listing the available products **(1.2 List of products)** and the available suppliers **(1.3 List of suppliers)**. Once the product and supplier details (with their respective IDs) are obtained, the next step is to create a new batch by submitting the corresponding data **(2. Store - Save batch)**. Once the batch is created, we proceed to register this OUTPUT movement in the kardex, which is handled internally.
 
-### Flujo para la creación de productos
+### Flow for registering a new sale
+This flow starts by retrieving a product's information using its code **(1.1 Search product by code)**. This process is repeated until the client has provided all the products to be purchased. After obtaining all the products, we create an array with the information of all the items and proceed to register the sale **(3. Make sale)**. Once the sale is registered, we record the INPUTs in the kardex, which is handled internally.
 
-Este flujo comienza pasando solo los datos necesarios para su creación **(1. Tienda - Registrar un nuevo producto)**.
+### Flow to get the top-selling products
+To retrieve this information, simply make a request to **(4. Kardex - Get most sold products)**, where the only required parameter is the limit.
 
-### Flujo para el agregado de nuevos lotes
+### Flow to get products below their set threshold
+To retrieve this information, simply make a request to **(5. Kardex - Get products below threshold)**.
 
-Este flujo comienza con el listado de los productos disponibles **(1.2 Listado de productos)** y el listado de los proveedores disponibles **(1.3 Listado de proveedores)**, una vez obtenidos los detalles del producto y el proveedor con su respectivo id, pasamos al siguiente paso donde creamos un nuevo lote pasando sus respectivos datos **(2. Tienda - Guardar lote)**, una finalizada la creación pasamos a registrar este movimiento de SALIDA en el Kardex, el cual se hace de manera interna.
+### Flow to get profit within a date range
+To retrieve this information, simply make a request to **(6. Kardex - Get profits)**, where the parameters are the start date and end date.
 
-### Flujo para registrar una nueva venta
+### Flow to update product information
+This flow is the same as the **Flow for product creation**, but the method changes to **(5.1 Update Price or Threshold of a product)**.
 
-El flujo comienza obteniendo la información de un producto por su código **(1.1 Buscar producto por código)**, este proceso es repetitivo hasta que el cliente haya pasado todos los productos que se llevara, después de haber obtenido todos los productos crearemos un array con la información de todos los productos que se llevara y pasamos a realizar la venta **(3. Realizar venta)**, una vez registrada la venta pasamos a registrar las ENTRADA's en el Kardex, el cual se lo hace de manera interna.
+## Integration Testing
+To run integration tests, you need to have Postman installed and import the file **Integration Tests of the Microservice.postman_collection.json**, which includes the corresponding documentation.
 
-### Flujo para obtener el top de los productos más vendidos
-
-Para obtener esta información solo es necesario hacer la petición a **(4. Kardex - Obtener los productos más vendidos)**, donde el único parámetro que debemos pasar es el límite.
-
-### Flujo para obtener productos debajo de su umbral establecido
-
-Para obtener esta información solo es necesario hacer la petición a **(5. Kardex - Obtener los productos que están por debajo del umbral)**.
-
-### Flujo para obtener la ganancia en un rango de fechas
-
-Para obtener esta información solo es necesario hacer la petición a **(6. Kardex - Obtener ganancias)**, donde sus parámetros son la fecha de inicio y la fecha final.
-
-### Flujo para actualizar la información de un producto
-
-Este flujo es igual al **Flujo para la creación de productos**, solamente cambia el método **(5.1 Actualizar el Precio o Umbral de un producto)**.
-
-## Pruebas de integración
-
-Para realizar las pruebas de integración es necesario contar con Postman instalado e importar el archivo **Pruebas de integracion de los microservicio.postman_collection.json**, donde ahí se encuentra su respectiva documentación.
-
-## Conclusiones
-
-El producto cumple con los requerimientos dados, pero aún puede ser más escalable si se decide agregar más funcionalidades como los descuentos a clientes frecuentes, compras online, carrito de compras, favoritos y productos con descuentos.
+## Conclusions
+The product meets the given requirements, but it can still be more scalable if additional features are added, such as discounts for frequent customers, online shopping, shopping carts, favorites, and discounted products.
